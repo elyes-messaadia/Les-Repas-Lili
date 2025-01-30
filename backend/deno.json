@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --allow-read main.ts",
+    "dev": "deno run --watch --allow-net --allow-env --allow-read main.ts",
+    "test": "deno test --allow-net --allow-env --allow-read",
+    "prepare": "husky install"
+  },
+  "imports": {
+    "@/": "./",
+    "$std/": "https://deno.land/std@0.220.1/"
+  },
+  "fmt": {
+    "indentWidth": 2,
+    "singleQuote": true,
+    "semiColons": true
+  }
+} 
