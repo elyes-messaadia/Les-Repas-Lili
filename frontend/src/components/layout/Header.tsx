@@ -13,21 +13,19 @@ export function Header() {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 sm:h-20">
+        <div className="flex justify-between h-14 sm:h-16">
           {/* Logo et navigation principale */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <div className="flex items-center">
-                <img
-                  src="/logo-with-text.png"
-                  alt="Les Repas Lili"
-                  className="h-12 sm:h-14 w-auto"
-                />
-              </div>
+              <img
+                src="/logo.png"
+                alt="Les Repas Lili"
+                className="h-10 sm:h-12 w-auto"
+              />
             </Link>
 
             {/* Navigation desktop */}
-            <nav className="hidden md:flex ml-8 lg:ml-12 space-x-4 lg:space-x-8">
+            <nav className="hidden md:flex ml-6 lg:ml-8 space-x-4 lg:space-x-6">
               <Link to="/" className="text-gray-700 hover:text-gray-900 px-2 py-1 text-sm font-medium rounded-md hover:bg-gray-50">
                 Accueil
               </Link>
