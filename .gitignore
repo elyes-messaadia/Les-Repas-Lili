@@ -42,4 +42,8 @@ coverage/
 
 # Misc
 *.pem
-.cache/ 
+.cache/
+
+# SQLite
+*.db
+*.db-journal 

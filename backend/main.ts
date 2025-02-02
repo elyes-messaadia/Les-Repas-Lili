@@ -1,45 +1,86 @@
-import { serve } from "./deps.ts";
-import { RecipeSchema } from "./schemas.ts";
-import { db } from "./db.ts";
+import { Application, Router } from "./deps.ts";
+import { CreateUserSchema, CreateRestaurantSchema, CreateReservationSchema } from "./schemas.ts";
+import { dbClient } from "./db.ts";
 
-const handler = async (req: Request): Promise<Response> => {
-  const headers = new Headers({
-    "content-type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
+const app = new Application();
+const router = new Router();
 
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers });
-  }
+// Middleware CORS
+app.use(async (ctx, next) => {
+  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+  ctx.response.headers.set(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE"
+  );
+  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  await next();
+});
 
-  const url = new URL(req.url);
-
+// Routes Utilisateurs
+router.post("/api/users", async (ctx) => {
   try {
-    // GET /api/recipes
-    if (url.pathname === "/api/recipes" && req.method === "GET") {
-      const recipes = await db.getRecipes();
-      return new Response(JSON.stringify(recipes), { headers });
-    }
-
-    // POST /api/recipes
-    if (url.pathname === "/api/recipes" && req.method === "POST") {
-      const body = await req.json();
-      const validatedRecipe = RecipeSchema.parse(body);
-      const newRecipe = await db.createRecipe(validatedRecipe);
-      return new Response(JSON.stringify(newRecipe), { headers });
-    }
-
-    return new Response("Not Found", { status: 404 });
+    const body = await ctx.request.body().value;
+    const userData = CreateUserSchema.parse(body);
+    const user = await dbClient.createUser(userData);
+    ctx.response.body = user;
   } catch (error) {
-    console.error(error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 400, headers }
-    );
+    ctx.response.status = 400;
+    ctx.response.body = { error: error.message };
   }
-};
+});
 
-console.log("Server running on http://localhost:8000");
-await serve(handler, { port: 8000 }); 
+// Routes Restaurants
+router.get("/api/restaurants", async (ctx) => {
+  try {
+    const restaurants = await dbClient.getRestaurants();
+    ctx.response.body = restaurants;
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { error: error.message };
+  }
+});
+
+router.post("/api/restaurants", async (ctx) => {
+  try {
+    const body = await ctx.request.body().value;
+    const restaurantData = CreateRestaurantSchema.parse(body);
+    const restaurant = await dbClient.createRestaurant(restaurantData);
+    ctx.response.body = restaurant;
+  } catch (error) {
+    ctx.response.status = 400;
+    ctx.response.body = { error: error.message };
+  }
+});
+
+// Routes Réservations
+router.post("/api/reservations", async (ctx) => {
+  try {
+    const body = await ctx.request.body().value;
+    const reservationData = CreateReservationSchema.parse(body);
+    const reservation = await dbClient.createReservation(reservationData);
+    ctx.response.body = reservation;
+  } catch (error) {
+    ctx.response.status = 400;
+    ctx.response.body = { error: error.message };
+  }
+});
+
+router.get("/api/restaurants/:id/reservations", async (ctx) => {
+  try {
+    const id = Number(ctx.params.id);
+    const reservations = await dbClient.getReservationsByRestaurant(id);
+    ctx.response.body = reservations;
+  } catch (error) {
+    ctx.response.status = 500;
+    ctx.response.body = { error: error.message };
+  }
+});
+
+// Configuration de l'application
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+// Démarrage du serveur
+const port = 8000;
+console.log(`Server running on http://localhost:${port}`);
+await app.listen({ port }); 

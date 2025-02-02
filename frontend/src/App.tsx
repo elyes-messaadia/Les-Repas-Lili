@@ -1,39 +1,42 @@
-import { useState, useEffect } from 'react'
-import { fetchData } from './services/api'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { LoginForm } from './components/auth/LoginForm';
+import { RestaurantList } from './components/RestaurantList';
+import { CreateRestaurantForm } from './components/restaurants/CreateRestaurantForm';
+import { useAuth } from './contexts/AuthContext';
+import './App.css';
+
+// Composant protégé qui vérifie l'authentification
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+};
 
 function App() {
-  const [message, setMessage] = useState<string>('')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const data = await fetchData()
-        setMessage(data.message)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setMessage('Error connecting to server')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    getData()
-  }, [])
-
   return (
-    <div className="App">
-      <h1>React + TypeScript + Deno</h1>
-      <div className="card">
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <p>Message from Deno: {message}</p>
-        )}
-      </div>
-    </div>
-  )
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <header className="App-header">
+            <h1>Réservation de Restaurants</h1>
+          </header>
+
+          <Routes>
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/" element={<RestaurantList />} />
+            <Route 
+              path="/restaurants/new" 
+              element={
+                <ProtectedRoute>
+                  <CreateRestaurantForm />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  );
 }
 
-export default App 
+export default App; 
