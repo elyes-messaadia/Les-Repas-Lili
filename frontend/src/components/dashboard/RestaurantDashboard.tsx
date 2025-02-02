@@ -46,10 +46,13 @@ export const RestaurantDashboard = () => {
       
       <div className="restaurant-selector">
         <h3>Vos Restaurants</h3>
-        <select onChange={(e) => {
-          const restaurant = restaurants.find(r => r.id === Number(e.target.value));
-          setSelectedRestaurant(restaurant || null);
-        }}>
+        <select 
+          aria-label="Sélectionner un restaurant"
+          onChange={(e) => {
+            const restaurant = restaurants.find(r => r.id === Number(e.target.value));
+            setSelectedRestaurant(restaurant || null);
+          }}
+        >
           <option value="">Sélectionner un restaurant</option>
           {restaurants.map(restaurant => (
             <option key={restaurant.id} value={restaurant.id}>
@@ -79,6 +82,7 @@ export const RestaurantDashboard = () => {
                   <td>{reservation.status}</td>
                   <td>
                     <select
+                      aria-label="Modifier le statut de la réservation"
                       value={reservation.status}
                       onChange={(e) => handleStatusChange(reservation.id, e.target.value)}
                     >

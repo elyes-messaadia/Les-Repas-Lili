@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Dancing+Script:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply text-gray-900;
+  }
+  h1 {
+    @apply text-4xl font-display font-bold text-lili-green mb-6;
+  }
+  h2 {
+    @apply text-3xl font-display font-semibold text-lili-gold mb-4;
+  }
+  h3 {
+    @apply text-2xl font-display font-medium text-lili-green mb-3;
+  }
+  p {
+    @apply text-base leading-relaxed mb-4;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-lili-green text-white px-6 py-2 rounded-xl hover:bg-lili-dark-green transition-colors duration-200;
+  }
+  .btn-secondary {
+    @apply bg-lili-gold text-white px-6 py-2 rounded-xl hover:bg-opacity-90 transition-colors duration-200;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-lg p-6;
+  }
+  .section-title {
+    @apply text-3xl font-display font-bold text-lili-green mb-8 text-center;
+  }
+  .handwriting {
+    @apply font-handwriting text-2xl;
+  }
+} 
