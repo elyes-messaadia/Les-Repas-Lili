@@ -1,45 +1,35 @@
-import { serve } from "./deps.ts";
+import { Hono, cors, serve } from "./deps.ts";
 import { RecipeSchema } from "./schemas.ts";
 import { db } from "./db.ts";
 
-const handler = async (req: Request): Promise<Response> => {
-  const headers = new Headers({
-    "content-type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
-    "Access-Control-Allow-Headers": "Content-Type",
-  });
+const app = new Hono();
 
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers });
-  }
+// CORS middleware
+app.use("/*", cors());
 
-  const url = new URL(req.url);
-
+// Routes
+app.get("/api/recipes", async (c) => {
   try {
-    // GET /api/recipes
-    if (url.pathname === "/api/recipes" && req.method === "GET") {
-      const recipes = await db.getRecipes();
-      return new Response(JSON.stringify(recipes), { headers });
-    }
-
-    // POST /api/recipes
-    if (url.pathname === "/api/recipes" && req.method === "POST") {
-      const body = await req.json();
-      const validatedRecipe = RecipeSchema.parse(body);
-      const newRecipe = await db.createRecipe(validatedRecipe);
-      return new Response(JSON.stringify(newRecipe), { headers });
-    }
-
-    return new Response("Not Found", { status: 404 });
+    const recipes = await db.getRecipes();
+    return c.json(recipes);
   } catch (error) {
-    console.error(error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 400, headers }
-    );
+    return c.json({ error: error.message }, 500);
   }
-};
+});
 
-console.log("Server running on http://localhost:8000");
-await serve(handler, { port: 8000 }); 
+app.post("/api/recipes", async (c) => {
+  try {
+    const body = await c.req.json();
+    const validatedRecipe = RecipeSchema.parse(body);
+    const newRecipe = await db.createRecipe(validatedRecipe);
+    return c.json(newRecipe, 201);
+  } catch (error) {
+    return c.json({ error: error.message }, 400);
+  }
+});
+
+// Start server
+const port = 8000;
+console.log(`Server running on http://localhost:${port}`);
+
+serve(app.fetch, { port }); 
