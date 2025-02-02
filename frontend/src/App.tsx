@@ -1,39 +1,75 @@
-import { useState, useEffect } from 'react'
-import { fetchData } from './services/api'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { createContext, useContext, useState } from 'react';
+import { Layout } from './components/layout/Layout';
+import { Login } from './components/Login';
+import { ResetPassword } from './components/ResetPassword';
+import { ContactForm } from './components/ContactForm';
+import { ContactRequestList } from './components/admin/ContactRequestList';
+import { Home } from './components/Home';
+
+// Types pour l'authentification
+type User = {
+  id: string;
+  email: string;
+  role: 'ADMIN' | 'RESTAURANT' | 'ASSOCIATION';
+};
+
+type AuthContextType = {
+  isAuthenticated: boolean;
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+// Création du contexte d'authentification
+export const AuthContext = createContext<AuthContextType | null>(null);
+
+// Hook personnalisé pour utiliser le contexte d'authentification
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 function App() {
-  const [message, setMessage] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    const getData = async () => {
-      try {
-        const data = await fetchData()
-        setMessage(data.message)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setMessage('Error connecting to server')
-      } finally {
-        setLoading(false)
-      }
-    }
+  const login = async (email: string, password: string) => {
+    // TODO: Implémenter la logique de connexion
+    setUser({
+      id: '1',
+      email: email,
+      role: 'ADMIN'
+    });
+  };
 
-    getData()
-  }, [])
+  const logout = async () => {
+    // TODO: Implémenter la logique de déconnexion
+    setUser(null);
+  };
 
   return (
-    <div className="App">
-      <h1>React + TypeScript + Deno</h1>
-      <div className="card">
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <p>Message from Deno: {message}</p>
-        )}
-      </div>
-    </div>
-  )
+    <AuthContext.Provider value={{
+      isAuthenticated: !!user,
+      user,
+      login,
+      logout
+    }}>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/contact" element={<ContactForm />} />
+            <Route path="/admin/contact-requests" element={<ContactRequestList />} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthContext.Provider>
+  );
 }
 
-export default App 
+export default App; 
