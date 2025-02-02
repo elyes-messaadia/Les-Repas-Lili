@@ -1,15 +1,24 @@
-import { defineConfig } from 'npm:vite@^5.0.0';
-import react from 'npm:@vitejs/plugin-react-swc@^3.3.2';
+import { defineConfig } from 'npm:vite';
+import react from 'npm:@vitejs/plugin-react';
+import { fromFileUrl, dirname, resolve } from "https://deno.land/std@0.220.1/path/mod.ts";
 
+const __dirname = dirname(fromFileUrl(import.meta.url));
+
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
   server: {
-    port: 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
-        changeOrigin: true
-      }
-    }
-  }
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 }); 

@@ -1,17 +1,44 @@
 {
   "tasks": {
-    "start": "deno run --allow-net --allow-env --allow-read main.ts",
-    "dev": "deno run --watch --allow-net --allow-env --allow-read main.ts",
+    "dev": "deno run --watch --allow-net --allow-env --allow-read --allow-write --allow-ffi main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read --allow-write main.ts",
     "test": "deno test --allow-net --allow-env --allow-read",
     "prepare": "husky install"
   },
   "imports": {
     "@/": "./",
-    "$std/": "https://deno.land/std@0.220.1/"
+    "$std/": "https://deno.land/std@0.220.1/",
+    "hono": "npm:hono@^4.0.0",
+    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
+    "@libsql/client": "npm:@libsql/client@0.5.3",
+    "djwt": "https://deno.land/x/djwt@v3.0.1/mod.ts",
+    "bcrypt": "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
   },
   "fmt": {
+    "include": ["src/"],
+    "exclude": ["src/testdata/", "data/fixtures/**/*.ts"],
     "indentWidth": 2,
+    "lineWidth": 80,
+    "proseWrap": "preserve",
+    "useTabs": false,
     "singleQuote": true,
     "semiColons": true
+  },
+  "lint": {
+    "include": ["src/"],
+    "exclude": ["src/testdata/", "data/fixtures/**/*.ts"],
+    "rules": {
+      "tags": ["recommended"],
+      "include": ["ban-untagged-todo"],
+      "exclude": ["no-unused-vars"]
+    }
+  },
+  "compilerOptions": {
+    "types": [
+      "./types.d.ts",
+      "https://deno.land/x/djwt@v3.0.1/mod.ts",
+      "https://deno.land/x/bcrypt@v0.4.1/mod.ts"
+    ]
   }
 } 

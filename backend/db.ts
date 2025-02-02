@@ -1,7 +1,7 @@
-import { DB } from "https://deno.land/x/sqlite3@0.11.1/mod.ts";
+import { DB } from "./deps.ts";
 import type { User, Restaurant, Reservation, Beneficiary, Association, BookingAgent } from "./schemas.ts";
 
-// Création de la base de données SQLite
+// Création de la connexion SQLite
 const db = new DB("app.db");
 
 // Création des tables
@@ -143,19 +143,16 @@ export const dbClient = {
   // Utilisateurs
   async createUser(user: Omit<User, "id" | "created_at">) {
     const { name, email, password } = user;
-    return db.queryEntries<User>(
-      `INSERT INTO users (name, email, password)
-       VALUES (?, ?, ?)
-       RETURNING *`,
+    const result = db.query(
+      "INSERT INTO users (name, email, password) VALUES (?, ?, ?) RETURNING *",
       [name, email, password]
-    )[0];
+    );
+    return result[0] as User;
   },
 
   async getUserByEmail(email: string) {
-    return db.queryEntries<User>(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    )[0];
+    const result = db.query("SELECT * FROM users WHERE email = ?", [email]);
+    return result[0] as User | undefined;
   },
 
   // Restaurants
@@ -173,15 +170,15 @@ export const dbClient = {
       user_id
     } = restaurant;
 
-    return db.queryEntries<Restaurant>(
-      `INSERT INTO restaurants (
+    const result = await db.execute({
+      sql: `INSERT INTO restaurants (
         name, address, description, image_url, menu_url,
         cuisine_type_id, meal_options, max_reservations,
         min_reservation_delay, user_id
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *`,
-      [
+      args: [
         name,
         address,
         description,
@@ -193,15 +190,17 @@ export const dbClient = {
         min_reservation_delay,
         user_id
       ]
-    )[0];
+    });
+    return result.rows[0] as Restaurant;
   },
 
   async getRestaurants() {
-    return db.queryEntries<Restaurant>(
-      `SELECT *, json(meal_options) as meal_options
-       FROM restaurants
-       ORDER BY created_at DESC`
-    );
+    const result = await db.execute({
+      sql: `SELECT *, json(meal_options) as meal_options
+            FROM restaurants
+            ORDER BY created_at DESC`
+    });
+    return result.rows as Restaurant[];
   },
 
   // Réservations
@@ -217,15 +216,15 @@ export const dbClient = {
       comments
     } = reservation;
 
-    return db.queryEntries<Reservation>(
-      `INSERT INTO reservations (
+    const result = await db.execute({
+      sql: `INSERT INTO reservations (
         beneficiary_id, restaurant_id, association_id,
         booking_agent_id, reservation_date, number_of_people,
         status, comments
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       RETURNING *`,
-      [
+      args: [
         beneficiary_id,
         restaurant_id,
         association_id,
@@ -235,16 +234,18 @@ export const dbClient = {
         status,
         comments
       ]
-    )[0];
+    });
+    return result.rows[0] as Reservation;
   },
 
   async getReservationsByRestaurant(restaurantId: number) {
-    return db.queryEntries<Reservation>(
-      `SELECT * FROM reservations
-       WHERE restaurant_id = ?
-       ORDER BY reservation_date DESC`,
-      [restaurantId]
-    );
+    const result = await db.execute({
+      sql: `SELECT * FROM reservations
+            WHERE restaurant_id = ?
+            ORDER BY reservation_date DESC`,
+      args: [restaurantId]
+    });
+    return result.rows as Reservation[];
   },
 
   // Associations
@@ -258,15 +259,16 @@ export const dbClient = {
       user_id
     } = association;
 
-    return db.queryEntries<Association>(
-      `INSERT INTO associations (
+    const result = await db.execute({
+      sql: `INSERT INTO associations (
         name, address, contact_name,
         contact_email, contact_phone, user_id
       )
       VALUES (?, ?, ?, ?, ?, ?)
       RETURNING *`,
-      [name, address, contact_name, contact_email, contact_phone, user_id]
-    )[0];
+      args: [name, address, contact_name, contact_email, contact_phone, user_id]
+    });
+    return result.rows[0] as Association;
   },
 
   // Bénéficiaires
@@ -279,27 +281,22 @@ export const dbClient = {
       birth_year
     } = beneficiary;
 
-    return db.queryEntries<Beneficiary>(
-      `INSERT INTO beneficiaries (
+    const result = await db.execute({
+      sql: `INSERT INTO beneficiaries (
         first_name, last_name, email,
         phone, birth_year
       )
       VALUES (?, ?, ?, ?, ?)
       RETURNING *`,
-      [first_name, last_name, email, phone, birth_year]
-    )[0];
+      args: [first_name, last_name, email, phone, birth_year]
+    });
+    return result.rows[0] as Beneficiary;
   },
 
   // Utilitaires
   async transaction<T>(callback: () => Promise<T>): Promise<T> {
-    try {
-      db.execute("BEGIN TRANSACTION");
-      const result = await callback();
-      db.execute("COMMIT");
-      return result;
-    } catch (error) {
-      db.execute("ROLLBACK");
-      throw error;
-    }
+    return await db.transaction(async (tx) => {
+      return await callback();
+    });
   }
 }; 
