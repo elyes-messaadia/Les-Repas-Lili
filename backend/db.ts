@@ -1,4 +1,4 @@
-import { DB } from "./deps.ts";
+import { DB } from "https://deno.land/x/sqlite3@0.9.1/mod.ts";
 import type { User, Restaurant, Reservation, Beneficiary, Association, BookingAgent } from "./schemas.ts";
 
 // Création de la base de données SQLite
