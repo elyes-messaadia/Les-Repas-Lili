@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authService, LoginResponse } from './services/auth';
+import { ResetPassword } from './components/ResetPassword';
 import './App.css';
 
 // Contexte d'authentification
@@ -127,6 +128,8 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResetPasswordMode, setIsResetPasswordMode] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,8 +138,31 @@ function Login() {
     
     try {
       await auth.login(email, password);
-    } catch (error) {
-      setError('Email ou mot de passe incorrect');
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        setError('Email ou mot de passe incorrect');
+      } else {
+        setError('Une erreur est survenue, veuillez réessayer plus tard');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    
+    try {
+      await authService.requestPasswordReset(email);
+      setResetSuccess(true);
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setError('Aucun compte trouvé avec cet email');
+      } else {
+        setError('Une erreur est survenue, veuillez réessayer plus tard');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -144,6 +170,61 @@ function Login() {
 
   if (auth.isAuthenticated) {
     return <Navigate to="/dashboard" />;
+  }
+
+  if (isResetPasswordMode) {
+    return (
+      <div className="max-w-md mx-auto">
+        <form onSubmit={handlePasswordReset} className="bg-white shadow-lg rounded-lg p-8 space-y-6">
+          <h2 className="text-3xl font-bold text-center">Réinitialisation du mot de passe</h2>
+          {resetSuccess ? (
+            <div className="bg-green-50 text-green-600 p-4 rounded">
+              Un email de réinitialisation a été envoyé à votre adresse email.
+            </div>
+          ) : (
+            <>
+              {error && (
+                <div className="bg-red-50 text-red-500 p-3 rounded">
+                  {error}
+                </div>
+              )}
+              <p className="text-gray-600">
+                Entrez votre adresse email pour recevoir un lien de réinitialisation.
+              </p>
+              <div>
+                <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="reset-email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex flex-col space-y-4">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isLoading ? 'Envoi en cours...' : 'Envoyer le lien'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsResetPasswordMode(false)}
+                  className="text-blue-500 hover:text-blue-600"
+                >
+                  Retour à la connexion
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      </div>
+    );
   }
 
   return (
@@ -181,13 +262,22 @@ function Login() {
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {isLoading ? 'Connexion...' : 'Se connecter'}
-        </button>
+        <div className="flex flex-col space-y-4">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isLoading ? 'Connexion...' : 'Se connecter'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsResetPasswordMode(true)}
+            className="text-blue-500 hover:text-blue-600"
+          >
+            Mot de passe oublié ?
+          </button>
+        </div>
       </form>
     </div>
   );
@@ -218,6 +308,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </Layout>
       </Router>
