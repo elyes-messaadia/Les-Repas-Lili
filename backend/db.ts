@@ -1,40 +1,50 @@
-import { Client } from "./deps.ts";
-import { config } from "https://deno.land/x/dotenv@v3.2.2/mod.ts";
+import { createClient } from "https://esm.sh/@libsql/client@0.5.6/web";
 
-// Charge les variables d'environnement
-const env = await config();
-
-const client = new Client({
-  user: env.POSTGRES_USER || "postgres",
-  database: env.POSTGRES_DB || "recipes_db",
-  hostname: env.POSTGRES_HOST || "localhost",
-  port: Number(env.POSTGRES_PORT) || 5432,
-  password: env.POSTGRES_PASSWORD,
+// Initialisation de la connexion LibSQL
+const db = createClient({
+  url: "file:recipes.db",
 });
 
-await client.connect();
+// Création de la table si elle n'existe pas
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS recipes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    ingredients TEXT NOT NULL,
+    instructions TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
-export const db = {
-  async getRecipes() {
-    const result = await client.queryObject`
-      SELECT * FROM recipes ORDER BY created_at DESC
-    `;
-    return result.rows;
+export interface Recipe {
+  id: number;
+  title: string;
+  description: string;
+  ingredients: string;
+  instructions: string;
+  created_at?: string;
+}
+
+export const dbClient = {
+  async getRecipes(): Promise<Recipe[]> {
+    const result = await db.execute("SELECT * FROM recipes ORDER BY created_at DESC");
+    return result.rows as Recipe[];
   },
 
-  async getRecipeById(id: number) {
-    const result = await client.queryObject`
-      SELECT * FROM recipes WHERE id = ${id}
-    `;
-    return result.rows[0];
+  async getRecipeById(id: number): Promise<Recipe | undefined> {
+    const result = await db.execute({
+      sql: "SELECT * FROM recipes WHERE id = ?",
+      args: [id]
+    });
+    return result.rows[0] as Recipe | undefined;
   },
 
-  async createRecipe(recipe: Omit<Recipe, "id">) {
-    const result = await client.queryObject`
-      INSERT INTO recipes (title, description, ingredients, instructions)
-      VALUES (${recipe.title}, ${recipe.description}, ${recipe.ingredients}, ${recipe.instructions})
-      RETURNING *
-    `;
-    return result.rows[0];
+  async createRecipe(recipe: Omit<Recipe, "id">): Promise<Recipe> {
+    const result = await db.execute({
+      sql: "INSERT INTO recipes (title, description, ingredients, instructions) VALUES (?, ?, ?, ?) RETURNING *",
+      args: [recipe.title, recipe.description, recipe.ingredients, recipe.instructions]
+    });
+    return result.rows[0] as Recipe;
   }
 }; 
